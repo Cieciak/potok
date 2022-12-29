@@ -1,6 +1,10 @@
 import CPPP
 
-reciever = CPPP.CP3Server('127.0.0.1', 1024)
-reciever.listen()
+socket = CPPP.CPPP()
 
-reciever.serve()
+socket.bind('127.0.0.1', 1024)
+socket.listen()
+
+print(socket.recv())
+
+socket.close()
