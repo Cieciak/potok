@@ -1,14 +1,11 @@
-import CPPP
+import CPPP, sys
 
-ATOMS = {
-    4: 842,
-    5: 2643,
-    6: 6724,
-}
+name, address, port = sys.argv
+print(f'Address: {address}\nPort: {port}')
 
-socket = CPPP.SCP3(atoms = ATOMS, threshold = 6, key = -2)
+socket = CPPP.CPPP()
 
-socket.connect('127.0.0.1', 8001)
+socket.connect(address, int(port))
 
 messages = []
 msg = input('>>> ')

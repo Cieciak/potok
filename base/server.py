@@ -1,6 +1,9 @@
-import CPPP
+import CPPP, sys
 
-server = CPPP.CP3Server('127.0.0.1', 8001)
+name, address, port = sys.argv
+print(f'Address: {address}\nPort: {port}')
+
+server = CPPP.CP3Server(address, int(port))
 
 @server
 def handle(x: list[bytearray]):
@@ -18,4 +21,3 @@ try:
 except KeyboardInterrupt:
     server.close()
     print('Server closed')
-

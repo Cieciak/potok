@@ -31,7 +31,8 @@ if __name__ == '__main__':
 
     encoded = c.encode(msg)
     c.revert()
-    decoded = c.decode(encoded)
+    d = Automaton(4)
+    decoded = d.decode(encoded)
 
     print(encoded)
     print(decoded)

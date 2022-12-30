@@ -194,6 +194,7 @@ class SCP3(CPPP):
         to_process = message.copy()
 
         if encode:
+            print(f'Encoding key: {key}')
             agent = crypto.Automaton(key)
             to_process = agent.encode(to_process)
 
@@ -311,10 +312,13 @@ class SCP3(CPPP):
         print(matrix)
 
         coeff = np.linalg.solve(matrix, vector)
+        print(coeff)
 
         out = []
         for msg in messages:
-            agent = crypto.Automaton(int(coeff[0]))
+            print(f'Read key {coeff[0]}')
+            # TODO: Force numpy to use ints
+            agent = crypto.Automaton(int(0.5 + coeff[0]))
             out.append(agent.decode(msg))
 
         # After nothing is left return
@@ -341,7 +345,7 @@ class SCP3(CPPP):
 
     def sendconn(self, address, port, conn, *messages):
         # List of messages to send in the request
-        RAW_PACKETS = SCP3.create_packet(address, port, messages)
+        RAW_PACKETS = SCP3.create_packet(address, port, messages, self.atoms, self.threshold, self.key)
         for packet in RAW_PACKETS:
             conn.send(packet)
 
@@ -389,6 +393,34 @@ class CP3Server:
 
     def serve(self):
 
+        while self.alive:
+            head, body, conn, addr = self.socket.recv()
+            address = [int(i) for i in addr[0].split('.')]
+            port = addr[1]
+
+            response = self.handle(body)
+
+            self.socket.sendconn(address, port, conn, *response)
+
+    def close(self):
+        self.socket.close()
+
+class SCP3Server:
+    def __init__(self, address: str, port: int, atoms, threshold, key = None, handler = lambda x: x) -> None:
+        self.socket = SCP3(atoms, threshold, key = key)
+        self.socket.bind(address, port)
+
+        self.alive = True
+
+        self.handle = handler
+
+    def __call__(self, other):
+        self.handle = other
+
+    def listen(self):
+        self.socket.listen()
+
+    def serve(self):
         while self.alive:
             head, body, conn, addr = self.socket.recv()
             address = [int(i) for i in addr[0].split('.')]
