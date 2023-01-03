@@ -3,14 +3,12 @@ import CPPP, sys
 name, address, port = sys.argv
 print(f'Address: {address}\nPort: {port}')
 
-
 ATOMS = {
-    4: 2568,
-    5: 8976,
-    6: 24112,
+    3: 41,
+    4: 86,
 }
 
-socket = CPPP.SCP3(atoms = ATOMS, threshold = 6, key = 16)
+socket = CPPP.SCP3(atoms = ATOMS, threshold = 4, key = 2)
 
 socket.connect(address, int(port))
 

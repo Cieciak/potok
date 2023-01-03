@@ -1,8 +1,9 @@
-import socket, crypto
+import socket, crypto, pprint
 import numpy as np
 
 byte = lambda x: bytearray([x,])
 
+# TODO: https://en.wikipedia.org/wiki/Negative_base
 def to_bytes(n: int):
     raw = []
     while n:
@@ -310,6 +311,7 @@ class SCP3(CPPP):
         vector = np.array(vector, dtype=int)
 
         print(matrix)
+        print(vector)
 
         coeff = np.linalg.solve(matrix, vector)
         print(coeff)
@@ -374,6 +376,191 @@ class SCP3(CPPP):
 
             if header[6] & 0b1000_0000:
                 return header, list(map(filter, SCP3.read_body(request, atoms = self.atoms, threshold = self.threshold)))
+
+class _SCP3(CPPP):
+
+    # CHANGED
+    @staticmethod
+    def translate_message(message: bytearray, *, key: int, encode: bool = True):
+        copy = message.copy()
+
+        # Handle the encoding
+        if encode:
+            agent = crypto.Automaton(key)
+            copy  = agent.encode(copy)
+
+        # Split into chunks
+        output = bytearray()
+        while copy:
+            chunk = copy[:255]
+            copy  = copy[255:]
+
+            # If maximum length split to chained message
+            if len(chunk) == 255 and copy: output += byte(0xFF) + chunk + byte(0x00)
+            else: output += byte(len(chunk)) + chunk
+        return output
+
+    # CHANGED
+    @staticmethod
+    def create_header(address: tuple[int], port: int, config: int):
+        output: bytearray = bytearray()
+
+        # Take care of 4 first bytes
+        for number in address:
+            output += byte(number)
+
+        output += byte(port // 256) # Top half of the port
+        output += byte(port  % 256) # Bottom half of the port
+        output += byte(config)      # Config byte
+        output += byte(0xBD)        # Reserved
+
+        return output
+
+    # CHANGED
+    def __init__(self,
+                 out_key: int = None,
+                 out_atoms: dict[int, int] = None,
+                 inc_atoms: dict[int, int] = None,
+                 inc_threshold: int = None,):
+        super().__init__()
+
+        # Outgoing values
+        self.out_key = out_key
+        self.out_atoms = out_atoms
+
+        # Incoming values
+        self.inc_atoms = inc_atoms
+        self.inc_threshold = inc_threshold
+
+    # CHANGED
+    def create_packet(self, messages: tuple[bytearray], config: int = 0x00):
+        raw_bytearray: bytearray = bytearray()
+        output_packets: list[bytearray] = []
+
+        # Put atoms in front
+        atom_count = len(self.out_atoms)
+        raw_bytearray += _SCP3.translate_message(to_bytes(atom_count), key = self.out_key, encode = False)
+        for argument, value in self.out_atoms.items():
+            raw_bytearray += _SCP3.translate_message(to_bytes(argument), key = self.out_key, encode = False)
+            raw_bytearray += _SCP3.translate_message(to_bytes(   value), key = self.out_key, encode = False)
+
+        for message in messages:
+            raw_bytearray += _SCP3.translate_message(message, key = self.out_key)
+
+        # Split until 
+        while raw_bytearray:
+            body          = raw_bytearray[:1016]
+            raw_bytearray = raw_bytearray[1016:]
+
+            # Set the END flag
+            if not raw_bytearray: config = config | 0x80
+            else:                 config = config & 0x7F
+
+            header = _SCP3.create_header(address = self.recv_address, port = self.recv_port, config = config)
+            output_packets.append(header + body)
+
+            # Set the CONTINUATION flag
+            if raw_bytearray: config = config | 0x01
+            else:             config = config & 0xFE
+
+        return output_packets
+
+    def read_body(self, content: bytearray):
+        copy = content.copy()
+
+        messages: list[bytearray] = []
+        message = bytearray()
+
+        # Get the first step
+        step = copy.pop(0)
+        flag = 1
+
+        while copy:
+            data = copy[:step]
+            copy = copy[step:]
+
+            # If you can get the next byte
+            if copy: flag = copy.pop(0)
+
+            message += data
+
+            if flag == 0 and copy:
+                step = copy.pop(0)
+            else:
+                messages.append(message)
+                message = bytearray()
+                step = flag
+
+        recv_atom_count = int.from_bytes(messages.pop(0))
+        recv_atoms = {}
+        for _ in range(recv_atom_count):
+            key = int.from_bytes(messages.pop(0))
+            val = int.from_bytes(messages.pop(0))
+            recv_atoms[key] = val
+
+        atoms = {**recv_atoms, **self.inc_atoms}
+
+        matrix = []
+        vector = []
+        for key, value in atoms.items():
+            row = [key ** power for power in range(self.inc_threshold)]
+            matrix.append(row)
+            vector.append(value)
+
+        matrix = np.array(matrix)
+        vector = np.array(vector)
+
+        coeff = np.linalg.solve(matrix, vector)
+
+        key = round(coeff[0])
+
+        decoded = []
+        for msg in messages:
+            # TODO: Force NumPy to use ints
+            agent = crypto.Automaton(key)
+            decoded.append(agent.decode(msg))
+        return decoded
+
+    # Sending 
+    def send(self, *messages: tuple[bytearray]):
+        # List of messages to send in the request
+        RAW_PACKETS = self.create_packet(messages = messages, config = 0x00)
+        for packet in RAW_PACKETS:
+            self.socket.send(packet)
+
+    def sendconn(self, address, port, conn, *messages):
+        # List of messages to send in the request
+        RAW_PACKETS = SCP3.create_packet(address, port, messages, self.atoms, self.threshold, self.key)
+        for packet in RAW_PACKETS:
+            conn.send(packet)
+
+
+    def recv(self, *, filter = lambda x: x):
+        while True:
+            conn, addr = self.socket.accept()
+            request = bytearray()
+
+            while True:
+                raw_data = conn.recv(1024)
+
+                header   = raw_data[:8]
+                request += raw_data[8:]
+
+                if header[6] & 0b1000_0000:
+                    body = [filter(message) for message in self.read_body(request)]
+                    return header, body, conn, addr
+
+    def raw_recv(self, *, filter = lambda x: x):
+        request = bytearray()
+        while True:
+            raw_data = self.socket.recv(1024)
+
+            header   = raw_data[:8]
+            request += raw_data[8:]
+
+            if header[6] & 0b1000_0000:
+                return header, list(map(filter, SCP3.read_body(request, atoms = self.atoms, threshold = self.threshold)))
+
 
 class CP3Server:
 
