@@ -2,13 +2,18 @@ import CPPP, sys
 
 ATOMS = {
     1: 5,
-    2: 16,
+    2: 21,
 }
 
 name, address, port = sys.argv
 print(f'Address: {address}\nPort: {port}')
 
-server = CPPP.SCP3Server(address, int(port), atoms = ATOMS, threshold = 4, key = 2)
+server = CPPP._SCP3Server(out_key = 1,
+                          out_atoms = ATOMS,
+                          inc_atoms = ATOMS,
+                          inc_threshold = 4,
+                          address = address,
+                          port = int(port))
 
 @server
 def handle(x: list[bytearray]):

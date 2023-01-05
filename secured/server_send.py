@@ -4,11 +4,11 @@ name, address, port = sys.argv
 print(f'Address: {address}\nPort: {port}')
 
 ATOMS = {
-    3: 41,
-    4: 86,
+    3: 55,
+    4: 113,
 }
 
-socket = CPPP.SCP3(atoms = ATOMS, threshold = 4, key = 2)
+socket = CPPP._SCP3(out_atoms = ATOMS, out_key = 1, inc_atoms = ATOMS, inc_threshold = 4)
 
 socket.connect(address, int(port))
 

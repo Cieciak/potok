@@ -12,7 +12,6 @@ def to_bytes(n: int):
 
     return bytearray(raw[::-1])
 
-
 def print_bytes(_iter: bytearray):
     for byte in _iter:
         print(f'{byte:<3}', end=' ')
@@ -530,7 +529,10 @@ class _SCP3(CPPP):
 
     def sendconn(self, address, port, conn, *messages):
         # List of messages to send in the request
-        RAW_PACKETS = SCP3.create_packet(address, port, messages, self.atoms, self.threshold, self.key)
+        # TODO: Fix this by changing *cfg arg in self.create_packet
+        self.recv_address = address
+        self.recv_port = port
+        RAW_PACKETS = self.create_packet(messages = messages, config = 0x00)
         for packet in RAW_PACKETS:
             conn.send(packet)
 
@@ -559,7 +561,7 @@ class _SCP3(CPPP):
             request += raw_data[8:]
 
             if header[6] & 0b1000_0000:
-                return header, list(map(filter, SCP3.read_body(request, atoms = self.atoms, threshold = self.threshold)))
+                return header, list(map(filter, SCP3.read_body(request, atoms = self.inc_atoms, threshold = self.inc_threshold)))
 
 
 class CP3Server:
@@ -614,6 +616,45 @@ class SCP3Server:
             port = addr[1]
 
             response = self.handle(body)
+
+            self.socket.sendconn(address, port, conn, *response)
+
+    def close(self):
+        self.socket.close()
+
+class _SCP3Server:
+
+    def __init__(self,
+                 out_key,
+                 out_atoms,
+                 inc_atoms,
+                 inc_threshold,
+                 address,
+                 port,
+                 handler = lambda x: x) -> None:
+
+        self.socket = _SCP3(out_key = out_key,
+                            out_atoms = out_atoms,
+                            inc_atoms = inc_atoms,
+                            inc_threshold = inc_threshold)
+        self.socket.bind(address, port)
+        self.alive = True
+
+        self.handler = handler
+
+    def __call__(self, other):
+        self.handler = other
+
+    def listen(self):
+        self.socket.listen()
+
+    def serve(self):
+        while self.alive:
+            head, body, conn, addr = self.socket.recv()
+            address = [int(i) for i in addr[0].split('.')]
+            port = addr[1]
+
+            response = self.handler(body)
 
             self.socket.sendconn(address, port, conn, *response)
 
