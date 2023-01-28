@@ -536,7 +536,6 @@ class _SCP3(CPPP):
         for packet in RAW_PACKETS:
             conn.send(packet)
 
-
     def recv(self, *, filter = lambda x: x):
         while True:
             conn, addr = self.socket.accept()

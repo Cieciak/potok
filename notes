@@ -3,4 +3,4 @@ entry ::= <name>:<value>
 collection ::= <name>{collection | entry | list}
 list ::= <name>[value]
 
-head{method:GET,location:"/",}body["Hello","World"]
+head{method:GET,location:/,}body[Hello,World]
