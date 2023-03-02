@@ -1,13 +1,15 @@
 import socket, select
-import time, pprint, types, json
+import pprint, types, json
 from parser.message_parser import TempParser, CPPP_JSON_Encoder
+
+import threading
 
 def recvall(sock: socket.socket, bufsize: int) -> bytearray:
     output = b''
     while True:
         raw_data = sock.recv(bufsize)
         output += raw_data
-        if not raw_data or raw_data.endswith(b'\00\00'): return output
+        if not raw_data or output.endswith(b'\00\00'): return output
 
 class CPPPMessage:
     parser: TempParser = TempParser()
@@ -49,7 +51,7 @@ class CPPPServer:
 
         # Server functions
         self.request_handler: types.FunctionType = lambda x: x
-        self.startup_handler: types.FunctionType = lambda x: x 
+        self.startup_handler: types.FunctionType = lambda x: x
 
         # Create socket and make a list to keep track of the connections
         self.connections: list[socket.socket] = []
@@ -70,6 +72,17 @@ class CPPPServer:
             case _:
                 raise NameError(f'{function.__name__} is not a server function')
 
+    def __handle(self, sock: socket.socket, msg: CPPPMessage):
+        response = self.request_handler(msg)
+        sock.sendall(response.raw)
+
+    def __spawn_task(self, sock: socket.socket, msg: CPPPMessage):
+        backgroud_task = threading.Thread(group = None,
+                                          target = self.__handle,
+                                          kwargs = {'sock': sock, 'msg': msg},
+                                          daemon = True)
+        backgroud_task.start()
+
     def serve(self):
         while True:
             read, write, error = select.select(self.connections, [], [])
@@ -81,10 +94,7 @@ class CPPPServer:
                     print(f'New connection from {address}')
                 else:
                     raw_data = recvall(socket, self.MAX_BUFFER)
-                    if raw_data:
-                        request  = CPPPMessage(raw_data)
-                        response = self.request_handler(request)
-                        socket.sendall(response.raw)
+                    if raw_data: self.__spawn_task(socket, CPPPMessage(raw_data))
                     else:
                         socket.close()
                         self.connections.remove(socket)
