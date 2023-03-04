@@ -9,7 +9,7 @@ def recvall(sock: socket.socket, bufsize: int) -> bytearray:
     while True:
         raw_data = sock.recv(bufsize)
         output += raw_data
-        if not raw_data or output.endswith(b'\00\00'): return output
+        if not raw_data or output.endswith(b'}\00\00'): return output
 
 class CPPPMessage:
     parser: TempParser = TempParser()
@@ -20,8 +20,8 @@ class CPPPMessage:
         if raw_data:
             self.header, self.body = self.parser.parse(raw_data)
         else:
-            self.header = header
-            self.body = body
+            self.header: dict = header
+            self.body: object = body
 
     def __repr__(self) -> str:
         return f'{pprint.pformat(self.header, indent = 4)}\n{self.body}'
@@ -66,17 +66,21 @@ class CPPPServer:
     def __call__(self, function: types.FunctionType):
         match function.__name__:
             case 'handler':
+                # What should happen on recieved request
                 self.request_handler = function
             case 'setup':
+                # What should happen on server start up
                 self.startup_handler = function
             case _:
                 raise NameError(f'{function.__name__} is not a server function')
 
     def __handle(self, sock: socket.socket, msg: CPPPMessage):
+        # Handle the request, should not be called by manually
         response = self.request_handler(msg)
         sock.sendall(response.raw)
 
     def __spawn_task(self, sock: socket.socket, msg: CPPPMessage):
+        # Make the task for request, should not be called manually
         backgroud_task = threading.Thread(group = None,
                                           target = self.__handle,
                                           kwargs = {'sock': sock, 'msg': msg},
@@ -91,7 +95,6 @@ class CPPPServer:
                 if socket == self.server_socket:
                     incoming, address = self.server_socket.accept()
                     self.connections.append(incoming)
-                    print(f'New connection from {address}')
                 else:
                     raw_data = recvall(socket, self.MAX_BUFFER)
                     if raw_data: self.__spawn_task(socket, CPPPMessage(raw_data))
