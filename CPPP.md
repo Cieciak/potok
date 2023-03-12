@@ -7,8 +7,8 @@
 	...
 	},
  "body": content
-}\0x00\0x00
+}\0x01\0x01
 ```
-There is no difference to normal JSON, except two zero bytes at the end of message.
+There is no difference to normal JSON, except two `0x01` bytes at the end of message.
 
 2. There are no other constrains

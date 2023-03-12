@@ -9,7 +9,7 @@ def recvall(sock: socket.socket, bufsize: int) -> bytearray:
     while True:
         raw_data = sock.recv(bufsize)
         output += raw_data
-        if not raw_data or output.endswith(b'}\00\00'): return output
+        if not raw_data or output.endswith(b'}\01\01'): return output
 
 class CPPPMessage:
     parser: TempParser = TempParser()
@@ -29,7 +29,7 @@ class CPPPMessage:
     @property
     def raw(self):
         raw_dict = {'head': self.header, 'body': self.body}
-        self.__raw = bytearray(json.dumps(raw_dict, cls = CPPP_JSON_Encoder), 'UTF-8') + b'\00\00'
+        self.__raw = bytearray(json.dumps(raw_dict, cls = CPPP_JSON_Encoder), 'UTF-8') + b'\01\01'
 
         return self.__raw
 
