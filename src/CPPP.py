@@ -76,7 +76,10 @@ class CPPPServer:
 
     def __handle(self, sock: socket.socket, msg: CPPPMessage):
         # Handle the request, should not be called by manually
-        response = self.request_handler(msg)
+        try: 
+            response = self.request_handler(msg)
+        except Exception as error:
+            response = CPPPMessage(header = {'method': 'ERROR', 'type': f'{type(error)}'})
         sock.sendall(response.raw)
 
     def __spawn_task(self, sock: socket.socket, msg: CPPPMessage):
