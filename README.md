@@ -1,5 +1,5 @@
 ﻿
-1. Structure
+# Structure
 ```
 {"head": {
 	"param_0": value,
@@ -11,4 +11,74 @@
 ```
 There is no difference to normal JSON, except two `0x01` bytes at the end of message.
 
-2. There are no other constrains
+### There are no other constrains
+
+# `CPPPMessage`
+
+`class CPPPMessage(raw_data = None, *, header: dict = None, body = None)`
+
+### `raw_data`
+> Raw contents of the CPPP message
+### `header`
+> Dictionary containing CPPP header
+### `body`
+> Bytearray with message body
+
+## Attributes
+### `raw`
+> Raw contents of the CPPP message
+### `header`
+> Message header
+### `body`
+> Bytearray with data
+
+## Methods
+### `add_header(header: dict)`
+> Set message header to given dict
+### `add_body(content: bytearray)`
+> Set message body to bytearray
+
+# CPPPServer
+
+`class CPPPServer(address: str, port: int)`
+
+## Attributes
+### `address`
+> Server address
+### `port`
+> Server port
+### `connections`
+> List of alive connections
+
+### `request_handler`
+> Function for handling the requests
+```py
+@server
+def request(msg: CPPPMessage):
+	...
+	return response
+```
+
+### `startup_handler`
+> Startup function
+```py
+@server
+def setup():
+	...
+```
+
+### `error_handler`
+> Fallback for server error
+```py
+@server
+def error(msg: CPPPMessage, err: Execption):
+	...
+	return response
+```
+## Methods
+### `serve()`
+> Start the server
+
+## Decorators
+### `@self`
+> Set server configuration functions

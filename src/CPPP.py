@@ -52,6 +52,7 @@ class CPPPServer:
         # Server functions
         self.request_handler: types.FunctionType = lambda x: x
         self.startup_handler: types.FunctionType = lambda x: x
+        self.error_handler  : types.FunctionType = lambda msg, err: CPPPMessage(header = {'method': 'ERROR', 'type': f'{type(err)}'})
 
         # Create socket and make a list to keep track of the connections
         self.connections: list[socket.socket] = []
@@ -71,6 +72,9 @@ class CPPPServer:
             case 'setup':
                 # What should happen on server start up
                 self.startup_handler = function
+            case 'error':
+                # What should happen on error
+                self.error_handler   = function
             case _:
                 raise NameError(f'{function.__name__} is not a server function')
 
@@ -79,7 +83,7 @@ class CPPPServer:
         try: 
             response = self.request_handler(msg)
         except Exception as error:
-            response = CPPPMessage(header = {'method': 'ERROR', 'type': f'{type(error)}'})
+            response = self.error_handler(msg, error)
         sock.sendall(response.raw)
 
     def __spawn_task(self, sock: socket.socket, msg: CPPPMessage):

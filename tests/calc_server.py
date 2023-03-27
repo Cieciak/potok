@@ -18,6 +18,13 @@ def handler(msg: CPPP.CPPPMessage):
 
     return response
 
+@server
+def error(msg: CPPP.CPPPMessage, err: Exception):
+    response = CPPP.CPPPMessage(header = {'method': 'ERROR'})
+    response.add_body(b'400, I guess?')
+
+    return response
+
 
 try: server.serve()
 except KeyboardInterrupt: print('Server stopped!')
