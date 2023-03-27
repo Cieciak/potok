@@ -8,7 +8,7 @@ server   = CPPP.CPPPServer('0.0.0.0', port)
 RESPONSE = 'Hello World!'
 
 @server
-def handler(msg: CPPP.CPPPMessage):
+def handler(msg: CPPP.CPPPMessage, ctx):
     response = CPPP.CPPPMessage(header = {'method': 'RETURN'})
     match msg.header['method']:
         case 'GET':

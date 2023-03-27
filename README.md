@@ -49,12 +49,14 @@ There is no difference to normal JSON, except two `0x01` bytes at the end of mes
 > Server port
 ### `connections`
 > List of alive connections
+### `ctx`
+> Context for the server operation
 
 ### `request_handler`
 > Function for handling the requests
 ```py
 @server
-def request(msg: CPPPMessage):
+def request(msg: CPPPMessage, ctx):
 	...
 	return response
 ```
@@ -63,7 +65,7 @@ def request(msg: CPPPMessage):
 > Startup function
 ```py
 @server
-def setup():
+def setup(ctx):
 	...
 ```
 
@@ -71,7 +73,7 @@ def setup():
 > Fallback for server error
 ```py
 @server
-def error(msg: CPPPMessage, err: Execption):
+def error(msg: CPPPMessage, err: Execption, ctx):
 	...
 	return response
 ```

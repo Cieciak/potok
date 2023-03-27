@@ -2,6 +2,7 @@ import socket, select
 import pprint, types, json
 from parser.message_parser import TempParser, CPPP_JSON_Encoder
 
+
 import threading
 
 def recvall(sock: socket.socket, bufsize: int) -> bytearray:
@@ -10,6 +11,9 @@ def recvall(sock: socket.socket, bufsize: int) -> bytearray:
         raw_data = sock.recv(bufsize)
         output += raw_data
         if not raw_data or output.endswith(b'}\01\01'): return output
+
+class Context(object):
+    ...
 
 class CPPPMessage:
     parser: TempParser = TempParser()
@@ -48,11 +52,12 @@ class CPPPServer:
         # Save server address and port
         self.address = address
         self.port = port
+        self.ctx = Context()
 
         # Server functions
-        self.request_handler: types.FunctionType = lambda x: x
-        self.startup_handler: types.FunctionType = lambda x: x
-        self.error_handler  : types.FunctionType = lambda msg, err: CPPPMessage(header = {'method': 'ERROR', 'type': f'{type(err)}'})
+        self.request_handler: types.FunctionType = lambda msg, ctx     : msg
+        self.startup_handler: types.FunctionType = lambda ctx          : None
+        self.error_handler  : types.FunctionType = lambda msg, err, ctx: CPPPMessage(header = {'method': 'ERROR', 'type': f'{type(err)}'})
 
         # Create socket and make a list to keep track of the connections
         self.connections: list[socket.socket] = []
@@ -81,9 +86,9 @@ class CPPPServer:
     def __handle(self, sock: socket.socket, msg: CPPPMessage):
         # Handle the request, should not be called by manually
         try: 
-            response = self.request_handler(msg)
+            response = self.request_handler(msg, self.ctx)
         except Exception as error:
-            response = self.error_handler(msg, error)
+            response = self.error_handler(msg, error, self.ctx)
         sock.sendall(response.raw)
 
     def __spawn_task(self, sock: socket.socket, msg: CPPPMessage):
@@ -95,6 +100,7 @@ class CPPPServer:
         backgroud_task.start()
 
     def serve(self):
+        self.startup_handler(self.ctx)
         while True:
             read, write, error = select.select(self.connections, [], [])
 
