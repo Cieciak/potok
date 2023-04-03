@@ -2,7 +2,6 @@ import socket, select
 import pprint, types, json
 from parser.message_parser import TempParser, CPPP_JSON_Encoder
 
-
 import threading
 
 def recvall(sock: socket.socket, bufsize: int) -> bytearray:
@@ -122,4 +121,4 @@ def send_request(address: str, port: int, message: CPPPMessage):
     response = recvall(s, 4096)
     s.close()
 
-    return response
+    return CPPPMessage(raw_data = response)

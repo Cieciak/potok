@@ -56,7 +56,7 @@ There is no difference to normal JSON, except two `0x01` bytes at the end of mes
 > Function for handling the requests
 ```py
 @server
-def request(msg: CPPPMessage, ctx):
+def handler(msg: CPPPMessage, ctx):
 	...
 	return response
 ```
