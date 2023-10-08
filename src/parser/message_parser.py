@@ -15,4 +15,4 @@ class TempParser:
 
     def parse(self, raw_data: bytearray) -> tuple[dict, object]:
         parsed = json.loads(raw_data[:-2])
-        return parsed['head'], parsed['body']
+        return parsed['head'], bytes(parsed['body'], 'utf-8')
