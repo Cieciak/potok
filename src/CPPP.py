@@ -1,4 +1,4 @@
-import socket, select, os, os.path
+import socket, select, os, os.path, uuid
 import pprint, types, json
 from parser.message_parser import TempParser, CPPP_JSON_Encoder
 
@@ -81,6 +81,7 @@ class Server:
         self.port = port
         self.root = path
         self.ctx = Context()
+        self.ctx.whoami = uuid.uuid4()
 
         # Function table
         self.function_table: dict[str, function] = {}
@@ -156,11 +157,12 @@ class Client:
     MAX_BUFFER = 4096
 
     def __init__(self):
-        ...
+        self.whoami = uuid.uuid4()
 
     def request(self, address: str, port: int, message: Message) -> Message:
         sock = socket.socket()
         sock.connect((address, port))
+        message.add_header({'whoami': self.whoami.bytes.hex()})
         sock.sendall(message.raw)
 
         response = recvall(sock, self.MAX_BUFFER)

@@ -38,13 +38,14 @@ def g(sock: socket.socket, msg: CPPP.Message, ctx: CPPP.Context):
 @server.handler('PIPE')
 def pipe(sock: socket.socket, msg: CPPP.Message, ctx: CPPP.Context):
     path = msg.head['localization']
+    whoami = msg.head['whoami']
 
-    print(sock.getsockname())
-    if not ctx.buffers.get(sock.getsockname(), None): create_buffer(ctx, path, sock.getsockname())
+    print(whoami)
+    if not ctx.buffers.get(whoami, None): create_buffer(ctx, path, whoami)
 
     print(os.path.join(ctx.path, path))
 
-    return CPPP.Message.response(read_buffer(ctx, sock.getsockname(), 10))
+    return CPPP.Message.response(read_buffer(ctx, whoami, 10))
 
 
 try: server.serve()
