@@ -1,5 +1,5 @@
 import socket, select, os, os.path, uuid
-import pprint, types, json
+import pprint, types, json, typing
 from parser.message_parser import TempParser, CPPP_JSON_Encoder
 
 import threading
@@ -117,7 +117,7 @@ class Server:
         task = threading.Thread(
             group = None,
             target = handler,
-            kwargs = {'sock': sock, 'msg': msg, 'ctx': self.ctx},
+            kwargs = {'sock': sock, 'msg': msg, 'ctx': self},
             daemon = True,
         )
 
@@ -125,7 +125,7 @@ class Server:
 
     def handler(self, name: str):
         def decorator(func: types.FunctionType):
-            def wrapper(sock: socket.socket, msg: Message, ctx: Context):
+            def wrapper(sock: socket.socket, msg: Message, ctx: typing.Self):
                 result = func(sock, msg, ctx)
 
                 result = result if result else Message.empty()
