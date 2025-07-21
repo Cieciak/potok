@@ -1,15 +1,24 @@
-﻿
-# Structure
+﻿# potok
+
+My homemade HTTP-like protocol
+
+## Structure
 ```
-{"head": {
-	"param_0": value,
-	"param_1": value,
-	...
-	},
- "body": content
-}\0x01\0x01
+-BEGIN-
+POTOK
+0.1
+GET
+-HEAD-
+Target: example
+Origin: here
+-BODY-
+rawdatabytes...
+ewerfer56t4g43f
+4364g3r3t5yvwvd
+8net357u67453bh 
+
 ```
-There is no difference to normal JSON, except two `0x01` bytes at the end of message.
+Content in `BODY` should be escaped
 
 ### There are no other constrains
 
