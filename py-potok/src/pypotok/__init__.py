@@ -1,2 +1,2 @@
-from .message import Message, Segment, BeginSegment, HeaderSegment, BodySegment
+from .message import Message, BeginSegment, HeaderSegment, BodySegment
 

@@ -1,20 +1,9 @@
 from dataclasses import dataclass, field
 
-@dataclass
-class BeginSegment:
-    name: str = 'POTOK'
-    version: str = '0.1'
-    method: str = ''
+from zjadacz import Status
+from .parser import potok_message_parser
 
-@dataclass
-class HeaderSegment:
-    tags: dict = field(default_factory=dict)
-
-@dataclass
-class BodySegment:
-    raw: bytearray = field(default_factory=bytearray)
-
-type Segment = BeginSegment | HeaderSegment | BodySegment
+from .segments import BodySegment, HeaderSegment, BeginSegment
 
 class Message:
 
@@ -22,3 +11,10 @@ class Message:
         self.begin: BeginSegment  = None
         self.head:  HeaderSegment = None
         self.body:  BodySegment   = None
+
+    @classmethod
+    def fromBytes(cls, data: bytes):
+
+        result = potok_message_parser.run(Status(data))
+
+        print(result)
