@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from zjadacz import Status
+from zjadacz import Status, ParserError
 from .parser import potok_message_parser
 
 from .segments import BodySegment, HeaderSegment, BeginSegment
@@ -14,7 +14,11 @@ class Message:
     @classmethod
     def fromBytes(cls, data: bytes, /):
         msg = cls()
-        msg.begin, msg.head, msg.body = potok_message_parser.run(Status(data)).result
+
+        result = potok_message_parser.run(Status(data))
+        if isinstance(result, ParserError): print(result)
+
+        msg.begin, msg.head, msg.body = result.result
         return msg
     
     def toBytes(self):
