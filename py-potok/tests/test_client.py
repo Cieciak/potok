@@ -1,17 +1,18 @@
 import pypotok
 
-addr = 'localhost'
-port = 8001
+addr = input('[ADDR] <<< ')
+port = int(input('[PORT] <<< '))
 
 while True:
 
-    data = input('>>>')
+    method = input('[METHOD]  <<< ')
+    data =   input('[PAYLOAD] <<< ')
 
     msg = pypotok.Message(
-        pypotok.BeginSegment(method='GET'),
+        pypotok.BeginSegment(method=method),
         pypotok.HeaderSegment({'dev': 'True'}),
         pypotok.BodySegment(bytes(data, 'utf-8'))
     )
     
-    rsp = pypotok.request('localhost', 8000, msg)
+    rsp = pypotok.request(addr, port, msg)
     print(rsp)

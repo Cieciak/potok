@@ -1,7 +1,7 @@
 import pypotok
 
 addr = '0.0.0.0'
-port = 8000
+port = 8100
 
 server = pypotok.Server(addr, port)
 
