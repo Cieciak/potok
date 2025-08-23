@@ -29,3 +29,13 @@ class Message:
         data = bytes(begin_segment, 'utf-8') + bytes(head_segment, 'utf-8') + body_segment
 
         return data
+    
+    @classmethod
+    def response(cls, payload: bytes):
+        msg = cls()
+
+        msg.begin = BeginSegment(method='RESPONSE')
+        msg.head = HeaderSegment({'valid': 'True'})
+        msg.body = BodySegment(payload)
+
+        return msg
