@@ -1,3 +1,4 @@
-.old/
+# Ignore python env
+.venv/
 __pycache__/
 *.egg-info/

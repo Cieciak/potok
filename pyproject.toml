@@ -1,13 +1,3 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools >= 80.9.0"]
 build-backend = "setuptools.build_meta"
-
-[project]
-name = "CPPP_Cieciak"
-version = "0.3.0"
-authors = [
-    {name = "Cięciak", email = "niko.cieciak@wp.pl"}
-]
-description = "Cieciak Primary Packet Protocol implementation"
-readme = "README.md"
-requires-python = ">=3.10"
